@@ -1,0 +1,20 @@
+<launch>
+  <arg name="model_profile" default="$(find yolo_ros)/config/model_profiles/yolo11_detect_pt.yaml" />
+  <arg name="image_topic" default="/camera/color/image_raw" />
+  <arg name="camera_info_topic" default="/camera/color/camera_info" />
+  <arg name="detections_topic" default="/yolo/detections" />
+  <arg name="overlay_topic" default="/yolo/overlay" />
+  <arg name="publish_overlay" default="true" />
+  <arg name="node_name" default="yolo_detect" />
+
+  <node pkg="yolo_ros" type="detect_node.py" name="$(arg node_name)" output="screen">
+    <rosparam command="load" file="$(find yolo_ros)/config/node.yaml" />
+    <param name="model_profile" value="$(arg model_profile)" />
+    <param name="image_topic" value="$(arg image_topic)" />
+    <param name="camera_info_topic" value="$(arg camera_info_topic)" />
+    <param name="detections_topic" value="$(arg detections_topic)" />
+    <param name="overlay_topic" value="$(arg overlay_topic)" />
+    <param name="publish_overlay" value="$(arg publish_overlay)" />
+  </node>
+</launch>
+

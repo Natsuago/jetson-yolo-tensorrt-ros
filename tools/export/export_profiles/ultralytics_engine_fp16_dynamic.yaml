@@ -1,0 +1,23 @@
+export:
+  tool: tools/export/export_ultralytics.py
+  format: engine
+  precision: fp16
+  imgsz: 640
+  batch: 1
+  dynamic: true
+  workspace_gib: 4
+  simplify: false
+  nms: false
+  end2end: none
+  device: 0
+
+inference:
+  conf: 0.25
+  iou: 0.45
+  classes: []
+  max_det: 300
+
+runtime:
+  expected_runner: ultralytics_runner
+  note: "Use dynamic shape only when your runtime and exported model need variable input sizes."
+

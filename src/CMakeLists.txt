@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.0.2)
+project(jetson_yolo_tensorrt_ros)
+
+set(CATKIN_TOPLEVEL TRUE)
+
+find_package(catkin REQUIRED QUIET)
+if(catkin_EXTRAS_DIR)
+  set(_catkin_all_cmake "${catkin_EXTRAS_DIR}/all.cmake")
+elseif(catkin_DIR)
+  set(catkin_EXTRAS_DIR "${catkin_DIR}")
+  set(_catkin_all_cmake "${catkin_DIR}/all.cmake")
+else()
+  set(catkin_EXTRAS_DIR "/opt/ros/noetic/share/catkin/cmake")
+  set(_catkin_all_cmake "/opt/ros/noetic/share/catkin/cmake/all.cmake")
+endif()
+include(${_catkin_all_cmake} NO_POLICY_SCOPE)
+catkin_workspace()

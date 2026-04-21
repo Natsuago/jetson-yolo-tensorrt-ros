@@ -1,0 +1,21 @@
+export:
+  tool: tools/export/export_yolov5_classic.py
+  include: engine
+  precision: fp16
+  imgsz: 640
+  dynamic: false
+  workspace_gib: 4
+  simplify: false
+  device: 0
+  yolov5_repo: /home/bdi/thirdparty/yolov5
+
+inference:
+  conf: 0.25
+  iou: 0.45
+  classes: []
+  max_det: 300
+
+runtime:
+  expected_runner: yolov5_classic_runner
+  note: "Requires external ultralytics/yolov5 repository. Do not vendor it into this project."
+

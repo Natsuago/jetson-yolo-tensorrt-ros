@@ -1,0 +1,29 @@
+model:
+  family: ultralytics
+  version: "11"
+  task: detect
+  backend: engine
+  path: /home/bdi/models/yolo11n_fp16.engine
+  imgsz: 640
+  class_names: coco
+  meta: /home/bdi/models/yolo11n_fp16.engine.meta.yaml
+  status: stable
+  note: ""
+
+inference:
+  conf: 0.25
+  iou: 0.45
+  classes: []
+  max_det: 300
+
+external:
+  yolov5_repo: ""
+
+ros:
+  image_topic: /camera/color/image_raw
+  camera_info_topic: /camera/color/camera_info
+  detections_topic: /yolo/detections
+  overlay_topic: /yolo/overlay
+  publish_overlay: true
+  queue_size: 1
+

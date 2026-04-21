@@ -1,0 +1,31 @@
+model:
+  family: ultralytics
+  version: "26"
+  task: detect
+  backend: engine
+  path: /home/bdi/models/yolo26n_fp16.engine
+  imgsz: 640
+  class_names: coco
+  meta: /home/bdi/models/yolo26n_fp16.engine.meta.yaml
+  status: stable
+  end2end: null
+  nms: null
+  note: "YOLO26 exports may use end-to-end / NMS-free behavior. Verify output schema, NMS state, and runner compatibility."
+
+inference:
+  conf: 0.25
+  iou: 0.45
+  classes: []
+  max_det: 300
+
+external:
+  yolov5_repo: ""
+
+ros:
+  image_topic: /camera/color/image_raw
+  camera_info_topic: /camera/color/camera_info
+  detections_topic: /yolo/detections
+  overlay_topic: /yolo/overlay
+  publish_overlay: true
+  queue_size: 1
+

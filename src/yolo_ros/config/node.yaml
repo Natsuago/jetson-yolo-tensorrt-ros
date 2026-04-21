@@ -1,0 +1,10 @@
+model_profile: ""
+image_topic: /camera/color/image_raw
+camera_info_topic: /camera/color/camera_info
+detections_topic: /yolo/detections
+overlay_topic: /yolo/overlay
+publish_overlay: true
+queue_size: 1
+subscribe_camera_info: true
+warn_no_camera_info: true
+

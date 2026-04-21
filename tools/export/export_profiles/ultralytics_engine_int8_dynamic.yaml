@@ -1,0 +1,25 @@
+export:
+  tool: tools/export/export_ultralytics.py
+  format: engine
+  precision: int8
+  imgsz: 640
+  batch: 1
+  dynamic: true
+  workspace_gib: 4
+  simplify: false
+  nms: false
+  end2end: none
+  device: 0
+  data: /home/bdi/datasets/coco.yaml
+  fraction: 1.0
+
+inference:
+  conf: 0.25
+  iou: 0.45
+  classes: []
+  max_det: 300
+
+runtime:
+  expected_runner: ultralytics_runner
+  note: "INT8 requires representative calibration data from the final deployment scenario."
+

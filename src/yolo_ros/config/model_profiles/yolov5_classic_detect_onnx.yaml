@@ -1,0 +1,29 @@
+model:
+  family: yolov5_classic
+  version: "5"
+  task: detect
+  backend: onnx
+  path: /home/bdi/models/yolov5s.onnx
+  imgsz: 640
+  class_names: coco
+  meta: /home/bdi/models/yolov5s.onnx.meta.yaml
+  status: stable
+  note: "Requires an external clone of https://github.com/ultralytics/yolov5 configured by external.yolov5_repo."
+
+inference:
+  conf: 0.25
+  iou: 0.45
+  classes: []
+  max_det: 300
+
+external:
+  yolov5_repo: ""
+
+ros:
+  image_topic: /camera/color/image_raw
+  camera_info_topic: /camera/color/camera_info
+  detections_topic: /yolo/detections
+  overlay_topic: /yolo/overlay
+  publish_overlay: true
+  queue_size: 1
+

@@ -1,0 +1,25 @@
+build/
+devel/
+install/
+logs/
+.catkin_workspace
+*.pt
+*.pth
+*.onnx
+*.engine
+*.plan
+*.trt
+*.weights
+*.bag
+*.avi
+*.mp4
+*.jpg
+*.png
+__pycache__/
+*.pyc
+.cache/
+.vscode/
+.idea/
+
+# Keep the local RealSense wrapper package out of the GitHub upload by request.
+src/realsense_camera/
