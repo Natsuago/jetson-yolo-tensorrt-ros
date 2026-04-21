@@ -30,8 +30,18 @@ class Detection2DPublisher:
         detection.bbox.size_y = result.height
 
         hypothesis = ObjectHypothesisWithPose()
-        hypothesis.hypothesis.id = int(result.class_id)
-        hypothesis.hypothesis.score = float(result.score)
+        Detection2DPublisher._set_hypothesis_fields(hypothesis, result.class_id, result.score)
         detection.results.append(hypothesis)
         return detection
 
+    @staticmethod
+    def _set_hypothesis_fields(hypothesis: ObjectHypothesisWithPose, class_id: int, score: float) -> None:
+        # vision_msgs has had two ROS1 layouts in the wild:
+        #   old/noetic deb: ObjectHypothesisWithPose.id, .score
+        #   newer layout:  ObjectHypothesisWithPose.hypothesis.id, .hypothesis.score
+        if hasattr(hypothesis, "hypothesis"):
+            hypothesis.hypothesis.id = int(class_id)
+            hypothesis.hypothesis.score = float(score)
+        else:
+            hypothesis.id = int(class_id)
+            hypothesis.score = float(score)
