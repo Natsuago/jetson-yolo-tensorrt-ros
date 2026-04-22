@@ -1,30 +1,32 @@
 # Jetson-YOLO-Tensorrt-ROS
 
-## 1. Overview
+[中文](README.md) | [English](README_en.md)
 
-`jetson-yolo-tensorrt-ros` is a ROS Noetic package for running YOLO 2D object detection on NVIDIA Jetson.
+## 1. 项目概览
 
-The uploaded ROS package is `yolo_ros`. It subscribes to a ROS image topic, runs YOLO detect inference, publishes `vision_msgs/Detection2DArray`, and can optionally publish an overlay image.
+`jetson-yolo-tensorrt-ros` 是一个面向 NVIDIA Jetson 的 ROS Noetic YOLO 2D 目标检测项目。
 
-This project is camera-agnostic. Any camera can be used as long as it publishes a `sensor_msgs/Image` topic.
+当前上传到仓库的 ROS 包是 `yolo_ros`。它订阅 ROS 图像话题，运行 YOLO detect 推理，发布 `vision_msgs/Detection2DArray`，并可选发布 overlay 图像。
 
-Current scope:
+本项目不绑定任何相机。只要你的相机驱动发布 `sensor_msgs/Image`，就可以作为输入。
 
-- ROS Noetic only.
-- Detect task only.
-- Supports PT / ONNX / TensorRT engine through official YOLO runtime paths.
-- Supports Ultralytics YOLOv8 / YOLO11 / YOLO12 / YOLO26.
-- Supports YOLOv5 classic through an external `ultralytics/yolov5` repository.
-- Supports YOLOv13 as an experimental third-party provider.
-- Does not implement segmentation, pose, classification, OBB, depth fusion, point cloud, 3D detection, DeepStream, or a handwritten raw TensorRT decoder.
+当前范围：
 
-## 2. Quick Start
+- 仅支持 ROS Noetic。
+- 首版仅支持 detect。
+- 支持 PT / ONNX / TensorRT engine。
+- 支持 Ultralytics YOLOv8 / YOLO11 / YOLO12 / YOLO26。
+- 支持 YOLOv5 classic，但需要外部 `ultralytics/yolov5` 仓库。
+- 支持 YOLOv13 experimental provider。
+- 不实现分割、姿态、分类、OBB、深度融合、点云、3D 检测、DeepStream 或手写 TensorRT decoder。
 
-The following installation commands are based on the author's Jetson environment.
+## 2. 快速开始
 
-| Item | Version |
+以下安装命令基于作者的 Jetson 设备环境。
+
+| 项目 | 版本 |
 | --- | --- |
-| Device | NVIDIA Jetson Orin NX |
+| 设备 | NVIDIA Jetson Orin NX |
 | JetPack | 5.1.4 |
 | L4T / Jetson Linux | 35.6.0 |
 | Ubuntu | 20.04 |
@@ -34,7 +36,7 @@ The following installation commands are based on the author's Jetson environment
 | ROS | Noetic |
 | Python | 3.8.10 |
 
-Install ROS and system dependencies:
+安装 ROS 和系统依赖：
 
 ```bash
 sudo apt update
@@ -49,7 +51,7 @@ sudo apt install -y \
   libopenblas-base
 ```
 
-Install Jetson PyTorch and torchvision wheels:
+安装 Jetson PyTorch 和 torchvision wheel：
 
 ```bash
 python3 -m pip install --no-cache-dir \
@@ -59,14 +61,14 @@ python3 -m pip install --no-cache-dir \
   https://github.com/ultralytics/assets/releases/download/v0.0.0/torchvision-0.16.2+c6f3977-cp38-cp38-linux_aarch64.whl
 ```
 
-Install Python packages:
+安装 Python 包：
 
 ```bash
 python3 -m pip install pyyaml numpy
 python3 -m pip install ultralytics==8.4.40 --no-deps
 ```
 
-Test the Python environment:
+测试 Python 环境：
 
 ```bash
 python3 - <<'PY'
@@ -80,14 +82,14 @@ print("ultralytics import ok")
 PY
 ```
 
-Optionally freeze the torch packages in the user site:
+可选：冻结 torch 包：
 
 ```bash
 python3 -m pip install --user --no-deps torchvision==0.16.2+c6f3977
 python3 -m pip install --user --no-deps torch==2.1.0a0+41361538.nv23.06
 ```
 
-Clone and build:
+克隆并编译：
 
 ```bash
 cd ~
@@ -99,7 +101,7 @@ catkin_make -DCATKIN_ENABLE_TESTING=False -DCMAKE_BUILD_TYPE=Release
 source devel/setup.bash
 ```
 
-Export a YOLO11n FP16 TensorRT engine:
+以 `yolo11n.pt` 为例，导出 FP16 TensorRT engine：
 
 ```bash
 mkdir -p ~/models
@@ -124,14 +126,14 @@ python3 tools/export/export_ultralytics.py \
   --fraction 1.0
 ```
 
-Create a temporary model profile:
+创建一个临时模型配置：
 
 ```bash
 mkdir -p ~/temp
 cp src/yolo_ros/config/model_profiles/yolo11_detect_engine_gpu_fp16.yaml ~/temp/yolo11_engine.yaml
 ```
 
-Edit `~/temp/yolo11_engine.yaml` and set:
+编辑 `~/temp/yolo11_engine.yaml`，确认模型路径：
 
 ```yaml
 model:
@@ -139,7 +141,7 @@ model:
   meta: ~/models/yolo11n.engine.meta.yaml
 ```
 
-Run the YOLO node with your camera image topic:
+启动 ROS 节点：
 
 ```bash
 roslaunch yolo_ros detect.launch \
@@ -148,22 +150,22 @@ roslaunch yolo_ros detect.launch \
   model_profile:=~/temp/yolo11_engine.yaml
 ```
 
-If your camera does not publish `CameraInfo`, keep the argument but point it to a future/unused topic. The detector itself only requires `sensor_msgs/Image`.
+如果你的相机没有发布 `CameraInfo`，检测本身仍然可以运行；`yolo_ros` 的核心输入只依赖 `sensor_msgs/Image`。
 
-## 3. Supported YOLO Models
+## 3. 支持的 YOLO 模型
 
-| Model family | Task | Backends | Provider | Notes |
+| 模型家族 | 任务 | 后端 | Provider | 说明 |
 | --- | --- | --- | --- | --- |
-| YOLOv5 classic | detect | pt, onnx, engine | `Yolov5ClassicProvider` | Requires an external `ultralytics/yolov5` repo through `external.yolov5_repo`. DLA is not promised as stable. |
-| YOLOv8 | detect | pt, onnx, engine | `UltralyticsProvider` | Uses `ultralytics.YOLO(path).predict()`. |
-| YOLO11 | detect | pt, onnx, engine | `UltralyticsProvider` | Recommended default test target. |
-| YOLO12 | detect | pt, onnx, engine | `UltralyticsProvider` | Experimental / research-oriented. |
-| YOLOv13 | detect | pt, onnx, engine | `Yolov13Provider` | Experimental third-party provider. DLA is not promised as stable. |
-| YOLO26 | detect | pt, onnx, engine | `UltralyticsProvider` | End-to-end / NMS-free behavior requires care. |
+| YOLOv5 classic | detect | pt, onnx, engine | `Yolov5ClassicProvider` | 需要外部 `ultralytics/yolov5` 仓库，DLA 不承诺稳定支持。 |
+| YOLOv8 | detect | pt, onnx, engine | `UltralyticsProvider` | 使用 `ultralytics.YOLO(path).predict()`。 |
+| YOLO11 | detect | pt, onnx, engine | `UltralyticsProvider` | 推荐默认测试目标。 |
+| YOLO12 | detect | pt, onnx, engine | `UltralyticsProvider` | experimental / research-oriented。 |
+| YOLOv13 | detect | pt, onnx, engine | `Yolov13Provider` | experimental third-party provider，DLA 不承诺稳定支持。 |
+| YOLO26 | detect | pt, onnx, engine | `UltralyticsProvider` | end-to-end / NMS-free 行为需要额外确认。 |
 
-## 4. Export YOLO11n Models
+## 4. 导出 YOLO11n 模型
 
-ONNX export:
+ONNX 导出：
 
 ```bash
 cd ~/jetson-yolo-tensorrt-ros
@@ -189,7 +191,7 @@ python3 tools/export/export_ultralytics.py \
   --fraction 1.0
 ```
 
-GPU TensorRT FP16 engine export:
+GPU TensorRT FP16 engine 导出：
 
 ```bash
 cd ~/jetson-yolo-tensorrt-ros
@@ -215,7 +217,7 @@ python3 tools/export/export_ultralytics.py \
   --fraction 1.0
 ```
 
-DLA0 TensorRT FP16 engine export:
+DLA0 TensorRT FP16 engine 导出：
 
 ```bash
 cd ~/jetson-yolo-tensorrt-ros
@@ -241,15 +243,15 @@ python3 tools/export/export_ultralytics.py \
   --fraction 1.0
 ```
 
-Each export writes a metadata sidecar next to the model artifact, for example:
+每次导出会在模型文件旁生成 metadata sidecar，例如：
 
 ```text
 ~/models/yolo11n.engine.meta.yaml
 ```
 
-## 5. Run The ROS Node
+## 5. 运行 ROS 节点
 
-Example with an ONNX model:
+ONNX 示例：
 
 ```bash
 cd ~/jetson-yolo-tensorrt-ros
@@ -262,7 +264,7 @@ roslaunch yolo_ros detect.launch \
   model_profile:=$(rospack find yolo_ros)/config/model_profiles/yolo11_detect_onnx.yaml
 ```
 
-Example with a GPU TensorRT FP16 engine:
+GPU TensorRT FP16 engine 示例：
 
 ```bash
 roslaunch yolo_ros detect.launch \
@@ -271,99 +273,120 @@ roslaunch yolo_ros detect.launch \
   model_profile:=$(rospack find yolo_ros)/config/model_profiles/yolo11_detect_engine_gpu_fp16.yaml
 ```
 
-Published topics:
+输出话题：
 
-| Topic | Type | Description |
+| 话题 | 类型 | 说明 |
 | --- | --- | --- |
-| `/yolo/detections` | `vision_msgs/Detection2DArray` | 2D detection results. |
-| `/yolo/overlay` | `sensor_msgs/Image` | Optional overlay image when `publish_overlay=true`. |
+| `/yolo/detections` | `vision_msgs/Detection2DArray` | 2D 检测结果。 |
+| `/yolo/overlay` | `sensor_msgs/Image` | 可选 overlay 图像，`publish_overlay=true` 时发布。 |
 
-## 6. Camera Topic Requirements
+## 6. 相机话题输入要求
 
-Required input:
-
-| Topic | Type | Required |
+| 输入 | 类型 | 是否必须 |
 | --- | --- | --- |
-| image topic | `sensor_msgs/Image` | Yes |
-| camera info topic | `sensor_msgs/CameraInfo` | Optional |
+| 图像话题 | `sensor_msgs/Image` | 必须 |
+| 相机信息话题 | `sensor_msgs/CameraInfo` | 可选 |
 
-The input image should be convertible by `cv_bridge` to BGR8. Any ROS camera driver can be used if it publishes `sensor_msgs/Image`.
+输入图像需要能被 `cv_bridge` 转成 BGR8。任何 ROS 相机驱动都可以使用，只要它发布 `sensor_msgs/Image`。
 
-## 7. Model Profiles
+## 7. Model Profiles 配置说明
 
-Model profiles live in:
+配置目录：
 
 ```text
 src/yolo_ros/config/model_profiles/
 ```
 
-Minimal TensorRT engine profile shape:
+文件命名规则大致为：
 
-```yaml
-model:
-  family: ultralytics
-  version: "11"
-  task: detect
-  backend: engine
-  path: ~/models/yolo11n.engine
-  imgsz: 640
-  class_names: coco
-  meta: ~/models/yolo11n.engine.meta.yaml
-  status: stable
-  note: ""
-
-inference:
-  conf: 0.25
-  iou: 0.45
-  classes: []
-  max_det: 300
-
-engine:
-  accelerator: gpu
-  dla_core: null
-  precision: fp16
-  allow_gpu_fallback: false
-  nms: false
-  end2end: null
-
-ros:
-  image_topic: /camera/image_raw
-  camera_info_topic: /camera/camera_info
-  detections_topic: /yolo/detections
-  overlay_topic: /yolo/overlay
-  publish_overlay: true
-  queue_size: 1
+```text
+<model_family>_detect_<backend>.yaml
+<model_family>_detect_engine_<accelerator>_<precision>.yaml
 ```
 
-`roslaunch` arguments can override the `ros` section in the profile.
+核心字段含义：
 
-## 8. TensorRT And DLA Notes
+| 字段 | 含义 |
+| --- | --- |
+| `model.family` | 模型家族，例如 `ultralytics`、`yolov5_classic`、`yolov13`。 |
+| `model.version` | YOLO 版本，例如 `"8"`、`"11"`、`"26"`。 |
+| `model.task` | 当前只支持 `detect`。 |
+| `model.backend` | 模型后端：`pt`、`onnx`、`engine`。 |
+| `model.path` | 模型文件路径，指向 `.pt`、`.onnx` 或 `.engine`。 |
+| `model.imgsz` | 推理输入尺寸，通常为 `640`。 |
+| `model.class_names` | 类别名来源，默认 `coco`。 |
+| `model.meta` | 导出 metadata sidecar 路径，通常是 `*.meta.yaml`。 |
+| `inference.conf` | 置信度阈值。 |
+| `inference.iou` | NMS IoU 阈值。 |
+| `inference.classes` | 类别过滤，空列表表示不过滤。 |
+| `inference.max_det` | 单帧最大检测框数量。 |
+| `engine.accelerator` | TensorRT engine 加速目标：`gpu` 或 `dla`。 |
+| `engine.dla_core` | DLA core，GPU engine 使用 `null`；Orin NX 8GB 通常只能用 `0`。 |
+| `engine.precision` | `fp32`、`fp16` 或 `int8`。DLA 只支持 `fp16` / `int8`。 |
+| `engine.allow_gpu_fallback` | DLA 不支持的层是否允许 fallback 到 GPU。 |
+| `engine.nms` | 导出 engine 是否内置 NMS。 |
+| `engine.end2end` | 是否为 end-to-end 导出。 |
+| `external.yolov5_repo` | YOLOv5 classic 外部仓库路径。 |
+| `ros.image_topic` | 默认订阅图像话题，可被 launch 参数覆盖。 |
+| `ros.camera_info_topic` | 默认 CameraInfo 话题，可被 launch 参数覆盖。 |
+| `ros.detections_topic` | 默认检测结果输出话题。 |
+| `ros.overlay_topic` | 默认 overlay 输出话题。 |
+| `ros.publish_overlay` | 是否发布 overlay。 |
 
-TensorRT engine files are not portable model files. Build `.engine` files on the final deployment Jetson.
+当前配置文件列表：
 
-Recommended default:
+| 文件 | 含义 |
+| --- | --- |
+| `yolo8_detect_pt.yaml` | YOLOv8 Ultralytics `.pt` detect profile。 |
+| `yolo8_detect_onnx.yaml` | YOLOv8 Ultralytics ONNX detect profile。 |
+| `yolo8_detect_engine.yaml` | YOLOv8 Ultralytics TensorRT engine detect profile，默认 GPU FP16。 |
+| `yolo11_detect_pt.yaml` | YOLO11 Ultralytics `.pt` detect profile。 |
+| `yolo11_detect_onnx.yaml` | YOLO11 Ultralytics ONNX detect profile。 |
+| `yolo11_detect_engine.yaml` | YOLO11 Ultralytics TensorRT engine detect profile，兼容旧默认命名，默认 GPU FP16。 |
+| `yolo11_detect_engine_gpu_fp16.yaml` | YOLO11 GPU TensorRT FP16 engine profile，推荐的 GPU engine 示例。 |
+| `yolo11_detect_engine_dla0_fp16.yaml` | YOLO11 DLA0 TensorRT FP16 engine profile，允许 GPU fallback。 |
+| `yolo12_detect_pt.yaml` | YOLO12 Ultralytics `.pt` detect profile，experimental。 |
+| `yolo12_detect_onnx.yaml` | YOLO12 Ultralytics ONNX detect profile，experimental。 |
+| `yolo12_detect_engine.yaml` | YOLO12 Ultralytics TensorRT engine detect profile，experimental，默认 GPU FP16。 |
+| `yolo26_detect_pt.yaml` | YOLO26 Ultralytics `.pt` detect profile。 |
+| `yolo26_detect_onnx.yaml` | YOLO26 Ultralytics ONNX detect profile。 |
+| `yolo26_detect_engine.yaml` | YOLO26 Ultralytics TensorRT engine detect profile，默认 GPU FP16。 |
+| `yolo26_detect_engine_gpu_fp16.yaml` | YOLO26 GPU TensorRT FP16 engine profile。 |
+| `yolo26_detect_engine_dla0_fp16.yaml` | YOLO26 DLA0 TensorRT FP16 engine profile，允许 GPU fallback。 |
+| `yolov5_classic_detect_pt.yaml` | YOLOv5 classic `.pt` detect profile，需要 `external.yolov5_repo`。 |
+| `yolov5_classic_detect_onnx.yaml` | YOLOv5 classic ONNX detect profile，需要 `external.yolov5_repo`。 |
+| `yolov5_classic_detect_engine.yaml` | YOLOv5 classic TensorRT engine detect profile，需要 `external.yolov5_repo`。 |
+| `yolov13_detect_pt.yaml` | YOLOv13 `.pt` detect profile，experimental third-party provider。 |
+| `yolov13_detect_onnx.yaml` | YOLOv13 ONNX detect profile，experimental third-party provider。 |
+| `yolov13_detect_engine.yaml` | YOLOv13 TensorRT engine detect profile，experimental third-party provider。 |
 
-- Start with ONNX to verify the ROS pipeline.
-- Use GPU TensorRT FP16 static engine for the first accelerated deployment.
-- Keep the `.meta.yaml` sidecar next to the exported model.
+## 8. TensorRT 和 DLA 注意事项
 
-DLA notes:
+TensorRT engine 不是跨设备通用模型文件。建议在最终部署的 Jetson 上构建 `.engine`。
 
-- DLA supports FP16 and INT8 only.
-- DLA is available only for TensorRT engine export/runtime, not ONNX.
-- On Orin NX 8GB, use `dla_core=0`.
-- On Orin NX 16GB, `dla_core=0` or `dla_core=1` may be available.
-- DLA mainly helps reduce power, free GPU resources, and improve multi-stream or multi-model throughput.
-- DLA does not guarantee lower single-frame latency than GPU TensorRT.
-- If `allow_gpu_fallback=true`, unsupported DLA layers may run on GPU.
+推荐流程：
 
-Ultralytics DLA CLI example:
+- 先用 ONNX 跑通 ROS pipeline。
+- 再使用 GPU TensorRT FP16 static engine 做第一版加速部署。
+- 保留导出生成的 `.meta.yaml` 文件。
+
+DLA 注意事项：
+
+- DLA 只支持 FP16 和 INT8。
+- DLA 只适用于 TensorRT engine，不适用于 ONNX。
+- Orin NX 8GB 通常使用 `dla_core=0`。
+- Orin NX 16GB 可能可以使用 `dla_core=0` 或 `dla_core=1`。
+- DLA 的主要价值是降低功耗、释放 GPU、提升多流或多模型吞吐。
+- DLA 不保证单帧 latency 一定低于 GPU TensorRT。
+- 如果 `allow_gpu_fallback=true`，不支持 DLA 的层可能会运行在 GPU 上。
+
+Ultralytics DLA CLI 示例：
 
 ```bash
 yolo export model=yolo11n.pt format=engine device="dla:0" half=True
 ```
 
-Ultralytics DLA Python example:
+Ultralytics DLA Python 示例：
 
 ```python
 from ultralytics import YOLO
@@ -372,20 +395,20 @@ model = YOLO("yolo11n.pt")
 model.export(format="engine", device="dla:0", half=True)
 ```
 
-`trtexec` is kept only as a fallback / diagnostic tool. Prefer official YOLO export first.
+`trtexec` 只作为 fallback / diagnostic 工具保留。默认优先使用 YOLO 官方导出路径。
 
-## 9. Known Limitations
+## 9. 已知限制
 
-- ROS 2 is not supported.
-- Only 2D detect is implemented.
-- Segmentation, pose, OBB, classification, depth fusion, point clouds, and 3D detection are not implemented.
-- DeepStream is not part of this project.
-- No handwritten raw TensorRT decoder is included.
-- YOLOv5 classic requires an external `ultralytics/yolov5` repository.
-- YOLOv13 is experimental and depends on third-party upstream compatibility.
-- DLA support is focused on Ultralytics TensorRT engine export/runtime; YOLOv5 classic and YOLOv13 DLA are not promised as stable.
+- 不支持 ROS 2。
+- 当前只实现 2D detect。
+- 不实现分割、姿态、OBB、分类、深度融合、点云、3D 检测。
+- 不包含 DeepStream pipeline。
+- 不包含手写 raw TensorRT decoder。
+- YOLOv5 classic 需要外部 `ultralytics/yolov5` 仓库。
+- YOLOv13 是 experimental，依赖第三方上游兼容性。
+- DLA 支持主要面向 Ultralytics TensorRT engine；YOLOv5 classic 和 YOLOv13 的 DLA 不承诺稳定支持。
 
-## 10. References
+## 10. 参考链接
 
 - JetPack 5.1.4: https://developer.nvidia.com/embedded/jetpack-sdk-514
 - JetPack 5.1.4 Release Notes: https://docs.nvidia.com/jetson/archives/jetpack-archived/jetpack-514/release-notes/index.html
@@ -396,3 +419,4 @@ model.export(format="engine", device="dla:0", half=True)
 - TensorRT version / hardware compatibility: https://docs.nvidia.com/deeplearning/tensorrt/latest/inference-library/version-compatibility.html
 - ROS Noetic vision_msgs Detection2DArray: https://docs.ros.org/en/noetic/api/vision_msgs/html/msg/Detection2DArray.html
 - YOLOv13 third-party upstream: https://github.com/iMoonLab/yolov13
+
