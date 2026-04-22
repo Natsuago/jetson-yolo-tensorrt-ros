@@ -249,6 +249,17 @@ Each export writes a metadata sidecar next to the model artifact, for example:
 ~/models/yolo11n.engine.meta.yaml
 ```
 
+The export script normalizes engine artifact names from accelerator and precision:
+
+```text
+~/models/yolo11n_gpu_fp16.engine
+~/models/yolo11n_gpu_fp16.engine.meta.yaml
+~/models/yolo11n_dla0_fp16.engine
+~/models/yolo11n_dla0_fp16.engine.meta.yaml
+```
+
+If you switch from a GPU engine to a DLA engine, switch the model profile at the same time. Do not load a DLA engine with a profile that says `engine.accelerator: gpu`; the node will reject the mismatch based on metadata.
+
 ## 5. Run The ROS Node
 
 ONNX example:
@@ -271,6 +282,15 @@ roslaunch yolo_ros detect.launch \
   image_topic:=/camera/image_raw \
   camera_info_topic:=/camera/camera_info \
   model_profile:=$(rospack find yolo_ros)/config/model_profiles/yolo11_detect_engine_gpu_fp16.yaml
+```
+
+DLA0 TensorRT FP16 engine example:
+
+```bash
+roslaunch yolo_ros detect.launch \
+  image_topic:=/camera/image_raw \
+  camera_info_topic:=/camera/camera_info \
+  model_profile:=$(rospack find yolo_ros)/config/model_profiles/yolo11_detect_engine_dla0_fp16.yaml
 ```
 
 Published topics:

@@ -249,6 +249,17 @@ python3 tools/export/export_ultralytics.py \
 ~/models/yolo11n.engine.meta.yaml
 ```
 
+本项目的导出脚本会根据 accelerator 和 precision 规范化 engine 文件名：
+
+```text
+~/models/yolo11n_gpu_fp16.engine
+~/models/yolo11n_gpu_fp16.engine.meta.yaml
+~/models/yolo11n_dla0_fp16.engine
+~/models/yolo11n_dla0_fp16.engine.meta.yaml
+```
+
+如果你从 GPU engine 切换到 DLA engine，必须同步切换 model profile。不要用 `engine.accelerator: gpu` 的 profile 去加载 DLA engine，否则节点会根据 metadata 拒绝启动。
+
 ## 5. 运行 ROS 节点
 
 ONNX 示例：
@@ -271,6 +282,15 @@ roslaunch yolo_ros detect.launch \
   image_topic:=/camera/image_raw \
   camera_info_topic:=/camera/camera_info \
   model_profile:=$(rospack find yolo_ros)/config/model_profiles/yolo11_detect_engine_gpu_fp16.yaml
+```
+
+DLA0 TensorRT FP16 engine 示例：
+
+```bash
+roslaunch yolo_ros detect.launch \
+  image_topic:=/camera/image_raw \
+  camera_info_topic:=/camera/camera_info \
+  model_profile:=$(rospack find yolo_ros)/config/model_profiles/yolo11_detect_engine_dla0_fp16.yaml
 ```
 
 输出话题：

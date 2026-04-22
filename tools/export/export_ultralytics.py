@@ -68,6 +68,25 @@ def resolve_output(result: Any, model_path: Path, out_dir: Path, export_format: 
     raise RuntimeError(f"Could not locate exported {export_format} artifact for {model_path}")
 
 
+def artifact_suffix(args: argparse.Namespace) -> str:
+    if args.format == "engine":
+        if args.accelerator == "dla":
+            return f"dla{args.dla_core}_{args.precision}"
+        return f"gpu_{args.precision}"
+    return args.format
+
+
+def canonicalize_output_name(output: Path, model_path: Path, args: argparse.Namespace) -> Path:
+    suffix = artifact_suffix(args)
+    desired = output.with_name(f"{model_path.stem}_{suffix}{output.suffix}")
+    if output.resolve() == desired.resolve():
+        return output
+    if desired.exists():
+        desired.unlink()
+    output.rename(desired)
+    return desired
+
+
 def write_metadata(path: Path, args: argparse.Namespace, output: Path) -> None:
     family, version = infer_family_version(Path(args.model))
     precision = args.precision
@@ -193,6 +212,7 @@ def main() -> int:
     model = YOLO(str(model_path))
     result = model.export(**kwargs)
     output = resolve_output(result, model_path, out_dir, args.format)
+    output = canonicalize_output_name(output, model_path, args)
     print(f"Exported artifact: {output}")
     write_metadata(output, args, output)
     return 0
