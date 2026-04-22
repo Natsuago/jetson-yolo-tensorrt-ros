@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Iterable
+from typing import Iterable, Optional
 
 import numpy as np
 import rospy
@@ -16,9 +16,14 @@ class OverlayPublisher:
         self.publisher = rospy.Publisher(topic, Image, queue_size=queue_size)
         self.bridge = CvBridge()
 
-    def publish(self, cv_image: np.ndarray, detections: Iterable[DetectionResult], header) -> None:
-        overlay = draw_detections(cv_image, detections)
+    def publish(
+        self,
+        cv_image: np.ndarray,
+        detections: Iterable[DetectionResult],
+        header,
+        fps: Optional[float] = None,
+    ) -> None:
+        overlay = draw_detections(cv_image, detections, fps=fps)
         msg = self.bridge.cv2_to_imgmsg(overlay, encoding="bgr8")
         msg.header = header
         self.publisher.publish(msg)
-
