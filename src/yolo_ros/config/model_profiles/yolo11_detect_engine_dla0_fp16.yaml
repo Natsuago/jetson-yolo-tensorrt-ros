@@ -7,8 +7,8 @@ model:
   imgsz: 640
   class_names: coco
   meta: /home/bdi/models/yolo11n_dla0_fp16.engine.meta.yaml
-  status: stable
-  note: "DLA0 TensorRT FP16 engine profile. Orin NX 8GB exposes only DLA core 0; Orin NX 16GB can use DLA core 0 or 1."
+  status: experimental
+  note: "DLA0 TensorRT FP16 engine profile. On JetPack 5.1.4 / TensorRT 8.5.2 / Ultralytics 8.4.40, YOLO11n DLA0 FP16 has been observed to return zero detections; validate before deployment and prefer GPU FP16 when detections are empty. Orin NX 8GB exposes only DLA core 0; Orin NX 16GB can use DLA core 0 or 1."
 
 inference:
   conf: 0.25
@@ -34,4 +34,3 @@ ros:
   overlay_topic: /yolo/overlay
   publish_overlay: true
   queue_size: 1
-

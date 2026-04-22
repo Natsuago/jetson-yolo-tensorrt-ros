@@ -198,6 +198,13 @@ def main() -> int:
             "DLA supports FP16/INT8 only; unsupported layers may require GPU fallback.",
             file=sys.stderr,
         )
+        if "yolo11" in Path(args.model).name.lower():
+            print(
+                "WARNING: YOLO11 DLA engines are experimental on JetPack 5.1.4 / TensorRT 8.5.2. "
+                "This project has observed YOLO11n DLA0 FP16 returning zero detections while "
+                "GPU TensorRT FP16 works. Validate the exported engine on a static image before ROS deployment.",
+                file=sys.stderr,
+            )
 
     model_path = Path(args.model).expanduser()
     out_dir = Path(args.out_dir).expanduser()

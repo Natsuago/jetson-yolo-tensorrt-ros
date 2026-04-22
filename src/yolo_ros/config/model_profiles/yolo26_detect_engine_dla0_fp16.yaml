@@ -7,7 +7,7 @@ model:
   imgsz: 640
   class_names: coco
   meta: /home/bdi/models/yolo26n_dla0_fp16.engine.meta.yaml
-  status: stable
+  status: experimental
   note: "DLA0 TensorRT FP16 engine profile. Orin NX 8GB exposes only DLA core 0; Orin NX 16GB can use DLA core 0 or 1. YOLO26 end-to-end / NMS-free behavior requires output schema verification."
 
 inference:
@@ -34,4 +34,3 @@ ros:
   overlay_topic: /yolo/overlay
   publish_overlay: true
   queue_size: 1
-

@@ -383,7 +383,7 @@ src/yolo_ros/config/model_profiles/
 | `yolo11_detect_onnx.yaml` | YOLO11 Ultralytics ONNX detect profile。 |
 | `yolo11_detect_engine.yaml` | YOLO11 Ultralytics TensorRT engine detect profile，兼容旧默认命名，默认 GPU FP16。 |
 | `yolo11_detect_engine_gpu_fp16.yaml` | YOLO11 GPU TensorRT FP16 engine profile，推荐的 GPU engine 示例。 |
-| `yolo11_detect_engine_dla0_fp16.yaml` | YOLO11 DLA0 TensorRT FP16 engine profile，允许 GPU fallback。 |
+| `yolo11_detect_engine_dla0_fp16.yaml` | YOLO11 DLA0 TensorRT FP16 engine profile，experimental；作者环境已观察到 YOLO11n DLA0 FP16 可能 0 检出。 |
 | `yolo12_detect_pt.yaml` | YOLO12 Ultralytics `.pt` detect profile，experimental。 |
 | `yolo12_detect_onnx.yaml` | YOLO12 Ultralytics ONNX detect profile，experimental。 |
 | `yolo12_detect_engine.yaml` | YOLO12 Ultralytics TensorRT engine detect profile，experimental，默认 GPU FP16。 |
@@ -391,7 +391,7 @@ src/yolo_ros/config/model_profiles/
 | `yolo26_detect_onnx.yaml` | YOLO26 Ultralytics ONNX detect profile。 |
 | `yolo26_detect_engine.yaml` | YOLO26 Ultralytics TensorRT engine detect profile，默认 GPU FP16。 |
 | `yolo26_detect_engine_gpu_fp16.yaml` | YOLO26 GPU TensorRT FP16 engine profile。 |
-| `yolo26_detect_engine_dla0_fp16.yaml` | YOLO26 DLA0 TensorRT FP16 engine profile，允许 GPU fallback。 |
+| `yolo26_detect_engine_dla0_fp16.yaml` | YOLO26 DLA0 TensorRT FP16 engine profile，experimental，允许 GPU fallback。 |
 | `yolov5_classic_detect_pt.yaml` | YOLOv5 classic `.pt` detect profile，需要 `external.yolov5_repo`。 |
 | `yolov5_classic_detect_onnx.yaml` | YOLOv5 classic ONNX detect profile，需要 `external.yolov5_repo`。 |
 | `yolov5_classic_detect_engine.yaml` | YOLOv5 classic TensorRT engine detect profile，需要 `external.yolov5_repo`。 |
@@ -418,14 +418,16 @@ DLA 注意事项：
 - DLA 的主要价值是降低功耗、释放 GPU、提升多流或多模型吞吐。
 - DLA 不保证单帧 latency 一定低于 GPU TensorRT。
 - 如果 `allow_gpu_fallback=true`，不支持 DLA 的层可能会运行在 GPU 上。
+- 作者环境 JetPack 5.1.4 / TensorRT 8.5.2 / Ultralytics 8.4.40 下，`yolo11n` DLA0 FP16 engine 已观察到标准 `bus.jpg` 0 检出，而 PT 和 GPU FP16 engine 检出正常。
+- 因此 YOLO11 DLA profile 标记为 experimental。部署前请先用静态图片验证 engine，若 DLA engine 0 检出，直接切回 GPU FP16 TensorRT engine。
 
-Ultralytics DLA CLI 示例：
+Ultralytics DLA CLI 语法示例：
 
 ```bash
 yolo export model=yolo11n.pt format=engine device="dla:0" half=True
 ```
 
-Ultralytics DLA Python 示例：
+Ultralytics DLA Python 语法示例：
 
 ```python
 from ultralytics import YOLO
@@ -446,6 +448,7 @@ model.export(format="engine", device="dla:0", half=True)
 - YOLOv5 classic 需要外部 `ultralytics/yolov5` 仓库。
 - YOLOv13 是 experimental，依赖第三方上游兼容性。
 - DLA 支持主要面向 Ultralytics TensorRT engine；YOLOv5 classic 和 YOLOv13 的 DLA 不承诺稳定支持。
+- YOLO11 DLA 在作者测试平台上不作为推荐部署路径；推荐使用 YOLO11 GPU TensorRT FP16 engine。
 
 ## 10. 参考链接
 

@@ -383,7 +383,7 @@ Current profile files:
 | `yolo11_detect_onnx.yaml` | YOLO11 Ultralytics ONNX detect profile. |
 | `yolo11_detect_engine.yaml` | YOLO11 Ultralytics TensorRT engine detect profile, legacy default name, default GPU FP16. |
 | `yolo11_detect_engine_gpu_fp16.yaml` | YOLO11 GPU TensorRT FP16 engine profile, recommended GPU engine example. |
-| `yolo11_detect_engine_dla0_fp16.yaml` | YOLO11 DLA0 TensorRT FP16 engine profile with GPU fallback enabled. |
+| `yolo11_detect_engine_dla0_fp16.yaml` | YOLO11 DLA0 TensorRT FP16 engine profile, experimental; on the author's platform, YOLO11n DLA0 FP16 may return zero detections. |
 | `yolo12_detect_pt.yaml` | YOLO12 Ultralytics `.pt` detect profile, experimental. |
 | `yolo12_detect_onnx.yaml` | YOLO12 Ultralytics ONNX detect profile, experimental. |
 | `yolo12_detect_engine.yaml` | YOLO12 Ultralytics TensorRT engine detect profile, experimental, default GPU FP16. |
@@ -391,7 +391,7 @@ Current profile files:
 | `yolo26_detect_onnx.yaml` | YOLO26 Ultralytics ONNX detect profile. |
 | `yolo26_detect_engine.yaml` | YOLO26 Ultralytics TensorRT engine detect profile, default GPU FP16. |
 | `yolo26_detect_engine_gpu_fp16.yaml` | YOLO26 GPU TensorRT FP16 engine profile. |
-| `yolo26_detect_engine_dla0_fp16.yaml` | YOLO26 DLA0 TensorRT FP16 engine profile with GPU fallback enabled. |
+| `yolo26_detect_engine_dla0_fp16.yaml` | YOLO26 DLA0 TensorRT FP16 engine profile, experimental, with GPU fallback enabled. |
 | `yolov5_classic_detect_pt.yaml` | YOLOv5 classic `.pt` detect profile, requires `external.yolov5_repo`. |
 | `yolov5_classic_detect_onnx.yaml` | YOLOv5 classic ONNX detect profile, requires `external.yolov5_repo`. |
 | `yolov5_classic_detect_engine.yaml` | YOLOv5 classic TensorRT engine detect profile, requires `external.yolov5_repo`. |
@@ -418,14 +418,16 @@ DLA notes:
 - DLA mainly helps reduce power, free GPU resources, and improve multi-stream or multi-model throughput.
 - DLA does not guarantee lower single-frame latency than GPU TensorRT.
 - If `allow_gpu_fallback=true`, unsupported DLA layers may run on GPU.
+- On the author's JetPack 5.1.4 / TensorRT 8.5.2 / Ultralytics 8.4.40 platform, a `yolo11n` DLA0 FP16 engine has been observed to return zero detections on the standard `bus.jpg`, while PT and GPU FP16 engine outputs are correct.
+- For that reason, the YOLO11 DLA profile is marked experimental. Validate the engine on a static image before deployment; if the DLA engine returns zero detections, switch back to GPU FP16 TensorRT.
 
-Ultralytics DLA CLI example:
+Ultralytics DLA CLI syntax example:
 
 ```bash
 yolo export model=yolo11n.pt format=engine device="dla:0" half=True
 ```
 
-Ultralytics DLA Python example:
+Ultralytics DLA Python syntax example:
 
 ```python
 from ultralytics import YOLO
@@ -446,6 +448,7 @@ model.export(format="engine", device="dla:0", half=True)
 - YOLOv5 classic requires an external `ultralytics/yolov5` repository.
 - YOLOv13 is experimental and depends on third-party upstream compatibility.
 - DLA support is focused on Ultralytics TensorRT engine export/runtime; YOLOv5 classic and YOLOv13 DLA are not promised as stable.
+- YOLO11 DLA is not the recommended deployment path on the author's tested platform; use YOLO11 GPU TensorRT FP16 engine instead.
 
 ## 10. References
 

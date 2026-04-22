@@ -270,6 +270,13 @@ def check_metadata_compatibility(
                     "TensorRT DLA engine allows GPU fallback. Some layers may run on GPU; "
                     "DLA does not guarantee lower latency than GPU TensorRT."
                 )
+            if profile.model.family == "ultralytics" and profile.model.version == "11":
+                warn(
+                    "Known compatibility risk: Ultralytics YOLO11 TensorRT DLA engines have "
+                    "been observed to return zero detections on JetPack 5.1.4 / TensorRT 8.5.2 "
+                    "/ Ultralytics 8.4.40. Validate the engine with a static image before ROS "
+                    "deployment; prefer GPU FP16 TensorRT if detections are empty."
+                )
             if (
                 artifact.get("allow_gpu_fallback") is not None
                 and parse_bool(artifact.get("allow_gpu_fallback")) != profile.engine.allow_gpu_fallback
