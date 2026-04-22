@@ -2,6 +2,9 @@ export:
   tool: tools/export/export_ultralytics.py
   format: engine
   precision: int8
+  accelerator: gpu
+  dla_core: null
+  allow_gpu_fallback: false
   imgsz: 640
   batch: 1
   dynamic: true
@@ -22,4 +25,3 @@ inference:
 runtime:
   expected_runner: ultralytics_runner
   note: "INT8 requires representative calibration data from the final deployment scenario."
-

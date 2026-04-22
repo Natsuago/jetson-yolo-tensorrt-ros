@@ -16,6 +16,14 @@ inference:
   classes: []
   max_det: 300
 
+engine:
+  accelerator: gpu
+  dla_core: null
+  precision: fp16
+  allow_gpu_fallback: false
+  nms: false
+  end2end: null
+
 external:
   yolov5_repo: ""
 
@@ -26,4 +34,3 @@ ros:
   overlay_topic: /yolo/overlay
   publish_overlay: true
   queue_size: 1
-

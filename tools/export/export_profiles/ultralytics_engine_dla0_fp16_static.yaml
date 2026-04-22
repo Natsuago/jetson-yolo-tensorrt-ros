@@ -2,9 +2,9 @@ export:
   tool: tools/export/export_ultralytics.py
   format: engine
   precision: fp16
-  accelerator: gpu
-  dla_core: null
-  allow_gpu_fallback: false
+  accelerator: dla
+  dla_core: 0
+  allow_gpu_fallback: true
   imgsz: 640
   batch: 1
   dynamic: false
@@ -22,4 +22,5 @@ inference:
 
 runtime:
   expected_runner: ultralytics_runner
-  note: "Recommended default for Jetson deployment. Build the engine on the final target device."
+  note: "DLA0 FP16 export target. Orin NX 8GB exposes only DLA core 0; DLA may use GPU fallback for unsupported layers."
+

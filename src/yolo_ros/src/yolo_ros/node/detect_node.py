@@ -21,7 +21,7 @@ class YoloDetectNode:
         self.last_camera_info = None
 
         self.profile = load_profile_from_rosparams()
-        check_metadata_compatibility(self.profile, rospy.logwarn)
+        check_metadata_compatibility(self.profile, rospy.logwarn, rospy.loginfo)
 
         provider = get_provider(self.profile)
         status_note = provider.get_status_note()
@@ -87,4 +87,3 @@ def main() -> None:
         rospy.signal_shutdown(str(exc))
         return
     rospy.spin()
-

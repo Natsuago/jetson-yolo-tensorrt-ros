@@ -3,14 +3,12 @@ model:
   version: "26"
   task: detect
   backend: engine
-  path: /home/bdi/models/yolo26n_fp16.engine
+  path: /home/bdi/models/yolo26n_dla0_fp16.engine
   imgsz: 640
   class_names: coco
-  meta: /home/bdi/models/yolo26n_fp16.engine.meta.yaml
+  meta: /home/bdi/models/yolo26n_dla0_fp16.engine.meta.yaml
   status: stable
-  end2end: null
-  nms: null
-  note: "YOLO26 exports may use end-to-end / NMS-free behavior. Verify output schema, NMS state, and runner compatibility."
+  note: "DLA0 TensorRT FP16 engine profile. Orin NX 8GB exposes only DLA core 0; Orin NX 16GB can use DLA core 0 or 1. YOLO26 end-to-end / NMS-free behavior requires output schema verification."
 
 inference:
   conf: 0.25
@@ -19,10 +17,10 @@ inference:
   max_det: 300
 
 engine:
-  accelerator: gpu
-  dla_core: null
+  accelerator: dla
+  dla_core: 0
   precision: fp16
-  allow_gpu_fallback: false
+  allow_gpu_fallback: true
   nms: false
   end2end: null
 
@@ -36,3 +34,4 @@ ros:
   overlay_topic: /yolo/overlay
   publish_overlay: true
   queue_size: 1
+

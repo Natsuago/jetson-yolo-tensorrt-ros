@@ -2,6 +2,9 @@ export:
   tool: tools/export/export_ultralytics.py
   format: engine
   precision: fp16
+  accelerator: gpu
+  dla_core: null
+  allow_gpu_fallback: false
   imgsz: 640
   batch: 1
   dynamic: true
@@ -20,4 +23,3 @@ inference:
 runtime:
   expected_runner: ultralytics_runner
   note: "Use dynamic shape only when your runtime and exported model need variable input sizes."
-

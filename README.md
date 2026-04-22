@@ -317,7 +317,28 @@ python3 tools/export/export_ultralytics.py \
   --simplify false \
   --nms false \
   --end2end none \
-  --device 0
+  --device 0 \
+  --accelerator gpu
+```
+
+Ultralytics-family TensorRT DLA0 FP16 engine export:
+
+```bash
+python3 tools/export/export_ultralytics.py \
+  --model /home/bdi/models/yolo11n.pt \
+  --format engine \
+  --out-dir /home/bdi/models \
+  --imgsz 640 \
+  --batch 1 \
+  --precision fp16 \
+  --dynamic false \
+  --workspace-gib 4 \
+  --simplify false \
+  --nms false \
+  --end2end none \
+  --accelerator dla \
+  --dla-core 0 \
+  --allow-gpu-fallback true
 ```
 
 INT8 requires representative calibration data:
@@ -334,7 +355,8 @@ python3 tools/export/export_ultralytics.py \
   --workspace-gib 4 \
   --data /home/bdi/datasets/coco.yaml \
   --fraction 1.0 \
-  --device 0
+  --device 0 \
+  --accelerator gpu
 ```
 
 YOLOv5 classic export through an external official repo:
@@ -375,7 +397,23 @@ python3 tools/export/build_engine_trtexec.py \
   --max-shape 1x3x640x640
 ```
 
-`trtexec` is a fallback and diagnostic tool, not the default recommended path. A `trtexec` engine is not guaranteed to be parsed correctly by `UltralyticsRunner` or `Yolov5ClassicRunner`. If you use a `trtexec` engine, verify output schema, NMS/end2end state, preprocessing, and postprocessing compatibility.
+`trtexec` DLA fallback / diagnostic engine build:
+
+```bash
+python3 tools/export/build_engine_trtexec.py \
+  --onnx /home/bdi/models/yolo11n.onnx \
+  --engine /home/bdi/models/yolo11n_dla0_trtexec_fp16.engine \
+  --precision fp16 \
+  --workspace-gib 4 \
+  --input-name images \
+  --min-shape 1x3x640x640 \
+  --opt-shape 1x3x640x640 \
+  --max-shape 1x3x640x640 \
+  --use-dla-core 0 \
+  --allow-gpu-fallback
+```
+
+`trtexec` is a fallback and diagnostic tool, not the default recommended path. A `trtexec` engine is not guaranteed to be parsed correctly by `UltralyticsRunner` or `Yolov5ClassicRunner`. If you use a `trtexec` engine, verify output schema, NMS/end2end state, preprocessing, and postprocessing compatibility. `trtexec` DLA is also fallback / diagnostic; prefer the model family's official export path first.
 
 ## 10. Run YOLO Node
 
@@ -438,6 +476,17 @@ precision: fp32 | fp16 | int8
 
 The export scripts map this internally to official runtime arguments such as `half=True` or `int8=True`.
 
+Engine profile parameters:
+
+| Parameter | Meaning |
+| --- | --- |
+| `engine.accelerator` | `gpu` or `dla`. |
+| `engine.dla_core` | `null`, `0`, or `1`. Orin NX 8GB exposes only DLA core 0; Orin NX 16GB can use core 0 or 1. |
+| `engine.precision` | `fp32`, `fp16`, or `int8`. DLA supports only `fp16` and `int8`. |
+| `engine.allow_gpu_fallback` | Whether TensorRT may run unsupported DLA layers on GPU. |
+| `engine.nms` | Whether export contains NMS. |
+| `engine.end2end` | End-to-end export flag when applicable. |
+
 ## 13. Camera Topic Requirements
 
 Minimum requirement:
@@ -481,7 +530,37 @@ End-to-end / NMS-free notes:
 - The runner and metadata must agree on `nms` and `end2end` behavior.
 - Verify output schema before deployment.
 
-## 15. Known Limitations
+## 15. DLA Notes
+
+DLA is supported as a TensorRT engine accelerator/export target. It does not change the `yolo_ros` runtime architecture and does not introduce DeepStream.
+
+DLA constraints:
+
+- DLA supports FP16 and INT8 only.
+- DLA engines should be built on the final deployment Jetson.
+- On Orin NX 8GB use `dla_core=0`; on Orin NX 16GB, `dla_core=0` or `dla_core=1` may be available.
+- DLA's main value is lower power, freeing the GPU, and improving multi-stream or multi-model throughput.
+- DLA does not guarantee lower single-frame latency than GPU TensorRT.
+- If GPU fallback is enabled, some layers may run on GPU.
+
+Ultralytics CLI DLA example:
+
+```bash
+yolo export model=yolo11n.pt format=engine device="dla:0" half=True
+```
+
+Ultralytics Python DLA example:
+
+```python
+from ultralytics import YOLO
+
+model = YOLO("yolo11n.pt")
+model.export(format="engine", device="dla:0", half=True)
+```
+
+This project does not promise stable DLA support for YOLOv5 classic or YOLOv13. Treat those combinations as experimental and verify the exported engine, output schema, NMS/end2end behavior, and runtime logs.
+
+## 16. Known Limitations
 
 - ROS 2 is not supported.
 - Only 2D detect is implemented.
@@ -489,6 +568,6 @@ End-to-end / NMS-free notes:
 - No custom raw TensorRT tensor decoder is included.
 - YOLOv5 classic requires an external `ultralytics/yolov5` clone.
 - YOLOv13 is experimental and depends on third-party upstream compatibility.
+- DLA is supported only as a TensorRT engine export/runtime target, not as a separate DeepStream pipeline.
 - RealSense support depends on the official `realsense2_camera` ROS1 wrapper being installed or built.
 - RealSense launch arguments may need small adjustments across `realsense-ros` ROS1 wrapper versions.
-

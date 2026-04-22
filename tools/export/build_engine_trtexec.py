@@ -38,6 +38,10 @@ def build_command(args: argparse.Namespace) -> List[str]:
         command.append("--int8")
         if args.calib_cache:
             command.append(f"--calib={args.calib_cache}")
+    if args.use_dla_core is not None:
+        command.append(f"--useDLACore={args.use_dla_core}")
+    if args.allow_gpu_fallback:
+        command.append("--allowGPUFallback")
 
     if args.input_name and args.min_shape and args.opt_shape and args.max_shape:
         command.extend(
@@ -62,11 +66,14 @@ def write_metadata(args: argparse.Namespace) -> None:
         },
         "engine": {
             "format": "engine",
+            "accelerator": "dla" if args.use_dla_core is not None else "gpu",
+            "dla_core": args.use_dla_core,
             "precision": args.precision,
             "imgsz": args.imgsz,
             "batch": 1,
             "dynamic": args.min_shape != args.max_shape,
             "workspace_gib": args.workspace_gib,
+            "allow_gpu_fallback": args.allow_gpu_fallback,
             "nms": None,
             "end2end": None,
             "device": "trtexec",
@@ -98,11 +105,18 @@ def main() -> int:
     parser.add_argument("--opt-shape", default="1x3x640x640")
     parser.add_argument("--max-shape", default="1x3x640x640")
     parser.add_argument("--calib-cache", default=None)
+    parser.add_argument("--use-dla-core", type=int, default=None)
+    parser.add_argument("--allow-gpu-fallback", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--family", default="unknown")
     parser.add_argument("--version", default="unknown")
     parser.add_argument("--imgsz", type=int, default=640)
     args = parser.parse_args()
+    if args.use_dla_core is not None:
+        if args.use_dla_core not in {0, 1}:
+            parser.error("--use-dla-core must be 0 or 1. Orin NX 8GB exposes only DLA core 0.")
+        if args.precision not in {"fp16", "int8"}:
+            parser.error("DLA requires --precision fp16 or --precision int8.")
 
     command = build_command(args)
     print(" ".join(command))
@@ -123,4 +137,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

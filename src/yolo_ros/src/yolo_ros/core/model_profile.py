@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from yolo_ros.core.exceptions import ProfileError
-from yolo_ros.utils.yaml_utils import load_yaml_file
+from yolo_ros.utils.yaml_utils import load_yaml_file, parse_bool
 
 
 @dataclass
@@ -34,6 +34,16 @@ class InferenceConfig:
 
 
 @dataclass
+class EngineConfig:
+    accelerator: str = "gpu"
+    dla_core: Optional[int] = None
+    precision: str = "fp16"
+    allow_gpu_fallback: bool = False
+    nms: Optional[bool] = False
+    end2end: Optional[bool] = None
+
+
+@dataclass
 class ExternalConfig:
     yolov5_repo: str = ""
 
@@ -52,6 +62,7 @@ class RosConfig:
 class ModelProfile:
     model: ModelConfig
     inference: InferenceConfig = field(default_factory=InferenceConfig)
+    engine: Optional[EngineConfig] = None
     external: ExternalConfig = field(default_factory=ExternalConfig)
     ros: RosConfig = field(default_factory=RosConfig)
     source_path: str = ""
@@ -103,6 +114,20 @@ class ModelProfile:
             max_det=int(inference_data.get("max_det", 300)),
         )
 
+        engine = None
+        engine_data = data.get("engine")
+        if engine_data is not None or model.backend == "engine":
+            engine_data = engine_data or {}
+            dla_core = engine_data.get("dla_core")
+            engine = EngineConfig(
+                accelerator=str(engine_data.get("accelerator", "gpu") or "gpu"),
+                dla_core=None if dla_core is None else int(dla_core),
+                precision=str(engine_data.get("precision", "fp16") or "fp16"),
+                allow_gpu_fallback=parse_bool(engine_data.get("allow_gpu_fallback", False)),
+                nms=engine_data.get("nms", model.nms),
+                end2end=engine_data.get("end2end", model.end2end),
+            )
+
         external_data = data.get("external") or {}
         external = ExternalConfig(
             yolov5_repo=str(external_data.get("yolov5_repo", "") or ""),
@@ -118,7 +143,7 @@ class ModelProfile:
             queue_size=int(ros_data.get("queue_size", 1)),
         )
 
-        profile = cls(model=model, inference=inference, external=external, ros=ros)
+        profile = cls(model=model, inference=inference, engine=engine, external=external, ros=ros)
         profile.validate_basic()
         return profile
 
@@ -131,6 +156,20 @@ class ModelProfile:
             raise ProfileError(
                 f"Unsupported backend={self.model.backend!r}; expected pt, onnx, or engine."
             )
+        if self.engine is not None:
+            if self.model.backend != "engine":
+                raise ProfileError("The engine section is only valid when model.backend=engine.")
+            if self.engine.accelerator not in {"gpu", "dla"}:
+                raise ProfileError("engine.accelerator must be 'gpu' or 'dla'.")
+            if self.engine.precision not in {"fp32", "fp16", "int8"}:
+                raise ProfileError("engine.precision must be fp32, fp16, or int8.")
+            if self.engine.accelerator == "gpu" and self.engine.dla_core is not None:
+                raise ProfileError("engine.dla_core must be null when engine.accelerator=gpu.")
+            if self.engine.accelerator == "dla":
+                if self.engine.dla_core not in {0, 1}:
+                    raise ProfileError("engine.dla_core must be 0 or 1 when engine.accelerator=dla.")
+                if self.engine.precision not in {"fp16", "int8"}:
+                    raise ProfileError("DLA engine precision must be fp16 or int8.")
         if self.inference.max_det <= 0:
             raise ProfileError("inference.max_det must be positive.")
         if not (0.0 <= self.inference.conf <= 1.0):
@@ -164,7 +203,9 @@ def _same_imgsz(left: Any, right: Any) -> bool:
 def check_metadata_compatibility(
     profile: ModelProfile,
     warn: Callable[[str], None],
+    info: Optional[Callable[[str], None]] = None,
 ) -> None:
+    info = info or (lambda _message: None)
     meta_path = profile.model.meta
     if not meta_path:
         if profile.model.backend in {"onnx", "engine"}:
@@ -206,12 +247,43 @@ def check_metadata_compatibility(
             f"Static export imgsz={meta_imgsz!r} does not match profile imgsz={profile.model.imgsz!r}."
         )
 
+    if profile.engine is not None:
+        comparisons = {
+            "accelerator": profile.engine.accelerator,
+            "dla_core": profile.engine.dla_core,
+            "precision": profile.engine.precision,
+        }
+        for key, expected in comparisons.items():
+            actual = artifact.get(key)
+            if actual is not None and expected is not None and str(actual) != str(expected):
+                raise ProfileError(
+                    f"Metadata {key}={actual!r} does not match profile engine.{key}={expected!r}."
+                )
+
+        accelerator = str(artifact.get("accelerator", profile.engine.accelerator))
+        dla_core = artifact.get("dla_core", profile.engine.dla_core)
+        allow_gpu_fallback = artifact.get("allow_gpu_fallback", profile.engine.allow_gpu_fallback)
+        if accelerator == "dla":
+            info(f"TensorRT DLA engine selected: dla_core={dla_core}.")
+            if parse_bool(allow_gpu_fallback):
+                warn(
+                    "TensorRT DLA engine allows GPU fallback. Some layers may run on GPU; "
+                    "DLA does not guarantee lower latency than GPU TensorRT."
+                )
+            if (
+                artifact.get("allow_gpu_fallback") is not None
+                and parse_bool(artifact.get("allow_gpu_fallback")) != profile.engine.allow_gpu_fallback
+            ):
+                warn(
+                    "Metadata allow_gpu_fallback does not match profile engine.allow_gpu_fallback. "
+                    "Verify the engine was built with the intended fallback policy."
+                )
+
     for key in ("nms", "end2end"):
-        expected = getattr(profile.model, key, None)
+        expected = getattr(profile.engine, key, None) if profile.engine is not None else getattr(profile.model, key, None)
         actual = artifact.get(key)
         if expected is not None and actual is not None and bool(expected) != bool(actual):
             warn(
-                f"Metadata {key}={actual!r} does not match profile model.{key}={expected!r}. "
+                f"Metadata {key}={actual!r} does not match profile {key}={expected!r}. "
                 "Verify preprocessing and postprocessing compatibility."
             )
-

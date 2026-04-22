@@ -71,6 +71,8 @@ def resolve_output(result: Any, model_path: Path, out_dir: Path, export_format: 
 def write_metadata(path: Path, args: argparse.Namespace, output: Path) -> None:
     family, version = infer_family_version(Path(args.model))
     precision = args.precision
+    dla_core = args.dla_core if args.accelerator == "dla" else None
+    allow_gpu_fallback = args.allow_gpu_fallback if args.accelerator == "dla" else False
     metadata: Dict[str, Any] = {
         "model": {
             "family": family,
@@ -81,14 +83,17 @@ def write_metadata(path: Path, args: argparse.Namespace, output: Path) -> None:
         },
         "engine": {
             "format": args.format,
+            "accelerator": args.accelerator,
+            "dla_core": dla_core,
             "precision": precision,
             "imgsz": args.imgsz,
             "batch": args.batch,
             "dynamic": args.dynamic,
             "workspace_gib": args.workspace_gib,
+            "allow_gpu_fallback": allow_gpu_fallback,
             "nms": args.nms,
             "end2end": None if args.end2end == "none" else str_to_bool(args.end2end),
-            "device": args.device,
+            "device": args.export_device,
         },
         "platform": {
             "jetpack": os.environ.get("JETPACK_VERSION", "unknown"),
@@ -119,7 +124,7 @@ def build_export_kwargs(args: argparse.Namespace) -> Dict[str, Any]:
         "workspace": args.workspace_gib,
         "simplify": args.simplify,
         "nms": args.nms,
-        "device": args.device,
+        "device": args.export_device,
         "data": args.data,
         "fraction": args.fraction,
     }
@@ -142,9 +147,23 @@ def main() -> int:
     parser.add_argument("--nms", type=str_to_bool, default=False)
     parser.add_argument("--end2end", choices=["true", "false", "none"], default="none")
     parser.add_argument("--device", default="0")
+    parser.add_argument("--accelerator", choices=["gpu", "dla"], default="gpu")
+    parser.add_argument("--dla-core", type=int, default=0)
+    parser.add_argument("--allow-gpu-fallback", type=str_to_bool, default=True)
     parser.add_argument("--data", default=None)
     parser.add_argument("--fraction", type=float, default=1.0)
     args = parser.parse_args()
+
+    if args.accelerator == "dla":
+        if args.format != "engine":
+            parser.error("accelerator=dla requires --format engine.")
+        if args.precision not in {"fp16", "int8"}:
+            parser.error("accelerator=dla supports only --precision fp16 or --precision int8.")
+        if args.dla_core not in {0, 1}:
+            parser.error("--dla-core must be 0 or 1. Orin NX 8GB exposes only DLA core 0.")
+        args.export_device = f"dla:{args.dla_core}"
+    else:
+        args.export_device = args.device
 
     if args.precision == "int8" and not args.data:
         print(
@@ -154,6 +173,12 @@ def main() -> int:
         )
     if args.precision == "int8" and not args.dynamic:
         print("NOTE: Ultralytics TensorRT INT8 export may enable or require dynamic shapes internally.", file=sys.stderr)
+    if args.accelerator == "dla":
+        print(
+            f"NOTE: exporting TensorRT engine for DLA core {args.dla_core} with device={args.export_device}. "
+            "DLA supports FP16/INT8 only; unsupported layers may require GPU fallback.",
+            file=sys.stderr,
+        )
 
     model_path = Path(args.model).expanduser()
     out_dir = Path(args.out_dir).expanduser()
@@ -175,4 +200,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
