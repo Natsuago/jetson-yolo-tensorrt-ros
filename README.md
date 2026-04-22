@@ -280,6 +280,25 @@ roslaunch yolo_ros detect.launch \
 | `/yolo/detections` | `vision_msgs/Detection2DArray` | 2D 检测结果。 |
 | `/yolo/overlay` | `sensor_msgs/Image` | 可选 overlay 图像，`publish_overlay=true` 时发布。 |
 
+可视化 overlay 图像：
+
+```bash
+rosrun rqt_image_view rqt_image_view /yolo/overlay
+```
+
+如果系统没有 `rqt_image_view`：
+
+```bash
+sudo apt install -y ros-noetic-rqt-image-view
+```
+
+检查检测结果话题：
+
+```bash
+rostopic echo -n 1 /yolo/detections
+rostopic hz /yolo/detections
+```
+
 ## 6. 相机话题输入要求
 
 | 输入 | 类型 | 是否必须 |
@@ -419,4 +438,3 @@ model.export(format="engine", device="dla:0", half=True)
 - TensorRT version / hardware compatibility: https://docs.nvidia.com/deeplearning/tensorrt/latest/inference-library/version-compatibility.html
 - ROS Noetic vision_msgs Detection2DArray: https://docs.ros.org/en/noetic/api/vision_msgs/html/msg/Detection2DArray.html
 - YOLOv13 third-party upstream: https://github.com/iMoonLab/yolov13
-

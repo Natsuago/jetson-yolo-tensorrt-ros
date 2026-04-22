@@ -280,6 +280,25 @@ Published topics:
 | `/yolo/detections` | `vision_msgs/Detection2DArray` | 2D detection results. |
 | `/yolo/overlay` | `sensor_msgs/Image` | Optional overlay image when `publish_overlay=true`. |
 
+View the overlay image:
+
+```bash
+rosrun rqt_image_view rqt_image_view /yolo/overlay
+```
+
+If `rqt_image_view` is not installed:
+
+```bash
+sudo apt install -y ros-noetic-rqt-image-view
+```
+
+Check detection output:
+
+```bash
+rostopic echo -n 1 /yolo/detections
+rostopic hz /yolo/detections
+```
+
 ## 6. Camera Topic Requirements
 
 | Input | Type | Required |
@@ -419,4 +438,3 @@ model.export(format="engine", device="dla:0", half=True)
 - TensorRT version / hardware compatibility: https://docs.nvidia.com/deeplearning/tensorrt/latest/inference-library/version-compatibility.html
 - ROS Noetic vision_msgs Detection2DArray: https://docs.ros.org/en/noetic/api/vision_msgs/html/msg/Detection2DArray.html
 - YOLOv13 third-party upstream: https://github.com/iMoonLab/yolov13
-
